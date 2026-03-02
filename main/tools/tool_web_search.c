@@ -139,19 +139,25 @@ static void format_results(cJSON *root, char *output, size_t output_size)
     cJSON *item;
     cJSON_ArrayForEach(item, results) {
         if (idx >= SEARCH_RESULT_COUNT) break;
+        if (off >= output_size - 1) break;
 
         cJSON *title = cJSON_GetObjectItem(item, "title");
         cJSON *url = cJSON_GetObjectItem(item, "url");
         cJSON *desc = cJSON_GetObjectItem(item, "description");
 
-        off += snprintf(output + off, output_size - off,
+        int written = snprintf(output + off, output_size - off,
             "%d. %s\n   %s\n   %s\n\n",
             idx + 1,
             (title && cJSON_IsString(title)) ? title->valuestring : "(no title)",
             (url && cJSON_IsString(url)) ? url->valuestring : "",
             (desc && cJSON_IsString(desc)) ? desc->valuestring : "");
 
-        if (off >= output_size - 1) break;
+        if (written < 0) break;
+        if ((size_t)written >= output_size - off) {
+            off = output_size - 1;
+            break;
+        }
+        off += (size_t)written;
         idx++;
     }
 }
@@ -169,19 +175,25 @@ static void format_tavily_results(cJSON *root, char *output, size_t output_size)
     cJSON *item;
     cJSON_ArrayForEach(item, results) {
         if (idx >= SEARCH_RESULT_COUNT) break;
+        if (off >= output_size - 1) break;
 
         cJSON *title = cJSON_GetObjectItem(item, "title");
         cJSON *url = cJSON_GetObjectItem(item, "url");
         cJSON *content = cJSON_GetObjectItem(item, "content");
 
-        off += snprintf(output + off, output_size - off,
+        int written = snprintf(output + off, output_size - off,
             "%d. %s\n   %s\n   %s\n\n",
             idx + 1,
             (title && cJSON_IsString(title)) ? title->valuestring : "(no title)",
             (url && cJSON_IsString(url)) ? url->valuestring : "",
             (content && cJSON_IsString(content)) ? content->valuestring : "");
 
-        if (off >= output_size - 1) break;
+        if (written < 0) break;
+        if ((size_t)written >= output_size - off) {
+            off = output_size - 1;
+            break;
+        }
+        off += (size_t)written;
         idx++;
     }
 }
