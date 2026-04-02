@@ -5,6 +5,7 @@
 #include "tools/tool_files.h"
 #include "tools/tool_cron.h"
 #include "tools/tool_gpio.h"
+#include "tools/tool_led.h"
 
 #include <string.h>
 #include "esp_log.h"
@@ -213,6 +214,31 @@ esp_err_t tool_registry_init(void)
         .execute = tool_gpio_read_all_execute,
     };
     register_tool(&ga);
+
+    /* Register LED tools */
+    tool_led_init();
+
+    mimi_tool_t ledwr = {
+        .name = "led_write",
+        .description = "Set LED open or close.",
+        .input_schema_json =
+            "{\"type\":\"object\","
+            "\"properties\":{\"state\":{\"type\":\"string\",\"description\":\"open or close\"}},"
+            "\"required\":[\"state\"]}",
+        .execute = tool_led_write_execute,
+    };
+    register_tool(&ledwr);
+
+    mimi_tool_t ledrd = {
+        .name = "led_read",
+        .description = "Read LED state. Returns open or close. Use for checking led state.",
+        .input_schema_json =
+            "{\"type\":\"object\","
+            "\"properties\":{},"
+            "\"required\":[]}",
+        .execute = tool_led_read_execute,
+    };
+    register_tool(&ledrd);
 
     build_tools_json();
 

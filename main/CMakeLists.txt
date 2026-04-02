@@ -22,12 +22,14 @@ idf_component_register(
         "tools/tool_files.c"
         "tools/tool_gpio.c"
         "tools/gpio_policy.c"
+        "tools/tool_led.c"
         "skills/skill_loader.c"
         "onboard/wifi_onboard.c"
+        "voice/voice_websocket.c"
     INCLUDE_DIRS
         "."
     REQUIRES
         nvs_flash esp_wifi esp_netif esp_http_client esp_http_server
         esp_https_ota esp_event json spiffs console vfs app_update esp-tls
-        esp_timer esp_websocket_client esp_driver_gpio
+        esp_timer esp_websocket_client esp_driver_gpio esp_driver_i2s
 )

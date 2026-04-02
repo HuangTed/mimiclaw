@@ -250,6 +250,8 @@ esp_err_t llm_proxy_init(void)
 
 static esp_err_t llm_http_direct(const char *post_data, resp_buf_t *rb, int *out_status)
 {
+    bool is_https = (strncmp(llm_api_url(), "https://", 8) == 0);
+    
     esp_http_client_config_t config = {
         .url = llm_api_url(),
         .event_handler = http_event_handler,
@@ -257,7 +259,8 @@ static esp_err_t llm_http_direct(const char *post_data, resp_buf_t *rb, int *out
         .timeout_ms = 120 * 1000,
         .buffer_size = 4096,
         .buffer_size_tx = 4096,
-        .crt_bundle_attach = esp_crt_bundle_attach,
+        .crt_bundle_attach = is_https ? esp_crt_bundle_attach : NULL,
+        .transport_type = is_https ? HTTP_TRANSPORT_OVER_SSL : HTTP_TRANSPORT_OVER_TCP,
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&config);

@@ -77,7 +77,7 @@
 #define MIMI_AGENT_MAX_HISTORY       20
 #define MIMI_AGENT_MAX_TOOL_ITER     10
 #define MIMI_MAX_TOOL_CALLS          4
-#define MIMI_AGENT_SEND_WORKING_STATUS 1
+#define MIMI_AGENT_SEND_WORKING_STATUS 0
 
 /* Timezone (POSIX TZ format) */
 #define MIMI_TIMEZONE                "PST8PDT,M3.2.0,M11.1.0"
@@ -87,7 +87,8 @@
 #define MIMI_LLM_PROVIDER_DEFAULT    "anthropic"
 #define MIMI_LLM_MAX_TOKENS          4096
 #define MIMI_LLM_API_URL             "https://api.anthropic.com/v1/messages"
-#define MIMI_OPENAI_API_URL          "https://api.openai.com/v1/chat/completions"
+#define MIMI_OPENAI_API_URL          "https://open.bigmodel.cn/api/coding/paas/v4/chat/completions" // glm
+// #define MIMI_OPENAI_API_URL          "http://192.168.110.168:11434/v1/chat/completions" // local ollama
 #define MIMI_LLM_API_VERSION         "2023-06-01"
 #define MIMI_LLM_STREAM_BUF_SIZE     (32 * 1024)
 #define MIMI_LLM_LOG_VERBOSE_PAYLOAD 0
@@ -119,6 +120,9 @@
 
 /* GPIO */
 #define MIMI_GPIO_CONFIG_SECTION     1   /* enable GPIO tools */
+
+/* LED */
+#define MIMI_LED_GPIO                3   /* LED GPIO pin (active-low) */
 
 /* Skills */
 #define MIMI_SKILLS_PREFIX           MIMI_SPIFFS_BASE "/skills/"

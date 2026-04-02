@@ -26,6 +26,7 @@
 #include "heartbeat/heartbeat.h"
 #include "skills/skill_loader.h"
 #include "onboard/wifi_onboard.h"
+#include "voice/voice_websocket.h"
 
 static const char *TAG = "mimi";
 
@@ -182,6 +183,7 @@ void app_main(void)
         cron_service_start();
         heartbeat_start();
         ESP_ERROR_CHECK(ws_server_start());
+        // voice_start();
 
         ESP_LOGI(TAG, "All services started!");
     }

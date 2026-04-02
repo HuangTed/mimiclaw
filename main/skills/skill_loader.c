@@ -5,6 +5,7 @@
 #include <string.h>
 #include <dirent.h>
 #include "esp_log.h"
+#include "esp_timer.h"
 
 static const char *TAG = "skills";
 
@@ -100,21 +101,34 @@ static void extract_description(FILE *f, char *out, size_t out_size)
 
 size_t skill_loader_build_summary(char *buf, size_t size)
 {
+    int64_t start = esp_timer_get_time();
+    int64_t t0, t1;
+    
+    t0 = esp_timer_get_time();
     DIR *dir = opendir(MIMI_SPIFFS_BASE);
+    t1 = esp_timer_get_time();
+    
     if (!dir) {
         ESP_LOGW(TAG, "Cannot open SPIFFS for skill enumeration");
         buf[0] = '\0';
         return 0;
     }
+    ESP_LOGI(TAG, "  opendir: %lld ms", (t1 - t0) / 1000);
 
     size_t off = 0;
+    int skill_count = 0;
     struct dirent *ent;
     /* SPIFFS readdir returns filenames relative to the mount point (e.g. "skills/weather.md").
        We match entries that start with "skills/" and end with ".md". */
     const char *skills_subdir = "skills/";
     const size_t subdir_len = strlen(skills_subdir);
+    ESP_LOGI(TAG, "Start to read Skills");
 
+    int64_t readdir_total = 0;
+    int64_t fileio_total = 0;
+    
     while ((ent = readdir(dir)) != NULL && off < size - 1) {
+        int64_t iter_start = esp_timer_get_time();
         const char *name = ent->d_name;
 
         /* Match files under skills/ with .md extension */
@@ -128,12 +142,21 @@ size_t skill_loader_build_summary(char *buf, size_t size)
         char full_path[296];
         snprintf(full_path, sizeof(full_path), "%s/%s", MIMI_SPIFFS_BASE, name);
 
+        int64_t ft0 = esp_timer_get_time();
         FILE *f = fopen(full_path, "r");
+        int64_t ft1 = esp_timer_get_time();
+        int64_t fopen_ms = (ft1 - ft0) / 1000;
+        
         if (!f) continue;
 
         /* Read first line for title */
         char first_line[128];
-        if (!fgets(first_line, sizeof(first_line), f)) {
+        ft0 = esp_timer_get_time();
+        bool got_line = fgets(first_line, sizeof(first_line), f);
+        ft1 = esp_timer_get_time();
+        int64_t fgets1_ms = (ft1 - ft0) / 1000;
+        
+        if (!got_line) {
             fclose(f);
             continue;
         }
@@ -143,18 +166,40 @@ size_t skill_loader_build_summary(char *buf, size_t size)
 
         /* Read description (until blank line) */
         char desc[256];
+        ft0 = esp_timer_get_time();
         extract_description(f, desc, sizeof(desc));
+        ft1 = esp_timer_get_time();
+        int64_t desc_ms = (ft1 - ft0) / 1000;
+        
+        ft0 = esp_timer_get_time();
         fclose(f);
+        ft1 = esp_timer_get_time();
+        int64_t fclose_ms = (ft1 - ft0) / 1000;
+        
+        int64_t fileio_this = fopen_ms + fgets1_ms + desc_ms + fclose_ms;
+        fileio_total += fileio_this;
+        
+        ESP_LOGI(TAG, "  [%d] %s: fopen %lld ms, fgets %lld ms, desc %lld ms, fclose %lld ms, total %lld ms",
+                 skill_count, name, fopen_ms, fgets1_ms, desc_ms, fclose_ms, fileio_this);
 
         /* Append to summary */
         off += snprintf(buf + off, size - off,
             "- **%s**: %s (read with: read_file %s)\n",
             title, desc, full_path);
+        
+        skill_count++;
+        int64_t iter_end = esp_timer_get_time();
+        readdir_total += (iter_end - iter_start);
     }
 
+    t0 = esp_timer_get_time();
     closedir(dir);
+    t1 = esp_timer_get_time();
+    ESP_LOGI(TAG, "  closedir: %lld ms", (t1 - t0) / 1000);
 
     buf[off] = '\0';
-    ESP_LOGI(TAG, "Skills summary: %d bytes", (int)off);
+    int64_t end = esp_timer_get_time();
+    ESP_LOGI(TAG, "Skills summary: %d bytes, %d skills, fileio %lld ms, total %lld ms", 
+             (int)off, skill_count, fileio_total, (end - start) / 1000);
     return off;
 }
